@@ -119,7 +119,7 @@
     📅 Attendance (Today)
     <button id="adminBtn" onclick="showLogin()">Admin</button>
   </header>
-  <div id="locationStatus">📍 Checking location...</div>
+  <div id="locationStatus">📍 स्थान की जांच की जा रही है...</div>
   <div id="locationRetry"><button onclick="checkLocation()">📍 Allow Location Again</button></div>
   <div class="calendar" id="calendar"></div>  <div id="loginBox">
     <span id="closeLogin" onclick="closeLogin()">✖</span>
@@ -162,10 +162,10 @@
         const lng = pos.coords.longitude;
         const dist = getDistance(lat, lng, allowedLat, allowedLng);
         isInLocation = dist <= MAX_DIST;
-        document.getElementById("locationStatus").innerText = isInLocation ? "✅ Location Verified" : "❌ Out of range";
+        document.getElementById("locationStatus").innerText = isInLocation ? "✅ स्थान सत्यापित किया गया" : "❌ आप निर्धारित स्थान से बाहर हैं";
         document.getElementById("locationRetry").style.display = isInLocation ? "none" : "block";
       }, () => {
-        document.getElementById("locationStatus").innerText = "❌ Location access denied";
+        document.getElementById("locationStatus").innerText = "❌ स्थान की अनुमति नहीं मिली";
         document.getElementById("locationRetry").style.display = "block";
       });
     }
@@ -205,8 +205,8 @@
 
     function markAttendance(date, el) {
       if (!isInLocation) return alert("Location invalid.");
-      if (!isWithinTimeWindow()) return alert("Time 9:00–9:40 only");
-      if (localStorage.getItem("att_" + date)) return alert("Already marked!");
+      if (!isWithinTimeWindow()) return alert("उपस्थिति का समय सुबह 9:00 से 9:40 के बीच है।");
+      if (localStorage.getItem("att_" + date)) return alert("आज की उपस्थिति पहले ही दर्ज की जा चुकी है।");
       const name = prompt("Name?");
       const atr = prompt("ATR No?");
       const status = prompt("Status (P,A,L,H,Half)?").toUpperCase();
@@ -214,7 +214,7 @@
       firebase.database().ref("attendance/"+date+"/"+atr).set({ name, atr, status, date });
       localStorage.setItem("att_"+date, status);
       el.classList.add(status);
-      alert("✅ Saved");
+      alert("✅ उपस्थिति सफलतापूर्वक दर्ज की गई");
     }
 
     function showLogin() { document.getElementById("loginBox").style.display = "block"; }
