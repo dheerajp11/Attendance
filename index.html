@@ -1,12 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Attendance Tracker</title>
+  <title>Attendance Calendar</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       margin: 0;
       padding: 10px;
       background: #f2f2f2;
@@ -39,155 +40,137 @@
       background: #eee;
       text-align: center;
       border-radius: 6px;
+      cursor: pointer;
     }
     .sunday {
       color: red;
     }
-    .selected {
+    .P {
       background: green;
       color: white;
     }
-    .leave {
-      background: orange;
-      color: white;
-    }
-    .absent {
+    .A {
       background: red;
       color: white;
     }
-    .button-group {
-      margin-top: 10px;
-      display: flex;
-      justify-content: space-around;
+    .L {
+      background: orange;
+      color: white;
     }
-    .hidden {
-      display: none;
+    .H {
+      background: #2196f3;
+      color: white;
+    }
+    .Half {
+      background: purple;
+      color: white;
     }
     #locationStatus {
-      margin: 10px 0;
+      text-align: center;
+      margin-bottom: 10px;
       font-size: 14px;
       color: green;
     }
   </style>
 </head>
 <body>
-  <h2>📅 Mobile Attendance (2024-2025)</h2>
-  <div id="locationStatus">📍 Checking Location...</div>
+  <h2>📅 Attendance Calendar (2024–2025)</h2>
+  <div id="locationStatus">📍 Checking location...</div>
   <div class="calendar" id="calendar"></div>
 
-  <script>
-    const allowedLat = 26.8262645;
-    const allowedLng = 80.9260447;
-    let withinRange = false;
+<script>
+const allowedLat = 26.8262645;
+const allowedLng = 80.9260447;
+const MAX_DISTANCE_KM = 0.15;
+let isInLocation = false;
 
-    function isSunday(date) {
-      return new Date(date).getDay() === 0;
+function toRad(value) {
+  return (value * Math.PI) / 180;
+}
+
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function checkLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const dist = getDistance(lat, lng, allowedLat, allowedLng);
+        isInLocation = dist <= MAX_DISTANCE_KM;
+        document.getElementById("locationStatus").textContent = isInLocation
+          ? "✅ Location Verified"
+          : "❌ You are out of location range.";
+      },
+      (err) => {
+        document.getElementById("locationStatus").textContent = "❌ Location access denied.";
+      }
+    );
+  } else {
+    document.getElementById("locationStatus").textContent = "❌ Geolocation not supported.";
+  }
+}
+
+function isWithinTimeWindow() {
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  const total = hour * 60 + minute;
+  return total >= 540 && total <= 580; // 9:00–9:40 AM
+}
+
+function generateCalendar(year) {
+  const calendar = document.getElementById("calendar");
+  for (let month = 0; month < 12; month++) {
+    const monthDiv = document.createElement("div");
+    monthDiv.className = "month";
+    const monthName = new Date(year, month).toLocaleString("default", { month: "long" });
+    monthDiv.innerHTML = `<h3>${monthName} ${year}</h3>`;
+    const daysDiv = document.createElement("div");
+    daysDiv.className = "days";
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dateObj = new Date(dateStr);
+      const dayDiv = document.createElement("div");
+      dayDiv.className = "day";
+      if (dateObj.getDay() === 0) dayDiv.classList.add("sunday");
+      const status = localStorage.getItem("att_" + dateStr);
+      if (status) dayDiv.classList.add(status);
+      dayDiv.textContent = d;
+      dayDiv.onclick = () => handleAttendanceClick(dateStr, dayDiv);
+      daysDiv.appendChild(dayDiv);
     }
+    monthDiv.appendChild(daysDiv);
+    calendar.appendChild(monthDiv);
+  }
+}
 
-    function generateCalendar(year) {
-      const calendar = document.getElementById("calendar");
-      for (let month = 0; month < 12; month++) {
-        const monthDiv = document.createElement("div");
-        monthDiv.className = "month";
-        const monthName = new Date(year, month).toLocaleString("default", { month: "long" });
-        monthDiv.innerHTML = `<h3>${monthName} ${year}</h3>`;
-        const daysDiv = document.createElement("div");
-        daysDiv.className = "days";
+function handleAttendanceClick(date, el) {
+  if (!isInLocation) return alert("❌ आप location के बाहर हैं");
+  if (!isWithinTimeWindow()) return alert("❌ अटेंडेंस का समय 9:00 से 9:40 AM है");
+  if (localStorage.getItem("att_" + date)) return alert("✅ इस तारीख की अटेंडेंस पहले ही लग चुकी है");
+  const status = prompt("Enter status (P, A, L, Half, H):").toUpperCase();
+  if (!["P", "A", "L", "H", "HALF"].includes(status)) return alert("❌ Invalid status");
+  localStorage.setItem("att_" + date, status);
+  el.classList.add(status);
+}
 
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-        for (let d = 1; d <= daysInMonth; d++) {
-          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-          const dateObj = new Date(dateStr);
-          const dayDiv = document.createElement("div");
-          dayDiv.className = "day";
-          if (dateObj.getDay() === 0) dayDiv.classList.add("sunday");
-          dayDiv.textContent = d;
-          dayDiv.addEventListener("click", () => handleDayClick(dateStr, dayDiv));
-          daysDiv.appendChild(dayDiv);
-        }
-
-        monthDiv.appendChild(daysDiv);
-        calendar.appendChild(monthDiv);
-      }
-    }
-
-    function handleDayClick(date, element) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-      const currentTime = currentHour * 60 + currentMinute;
-
-      if (!withinRange) {
-        alert("📍 You are not at the authorized location.");
-        return;
-      }
-
-      if (currentTime < 540 || currentTime > 580) {
-        alert("⏰ Attendance allowed between 9:00 AM and 9:40 AM only.");
-        return;
-      }
-
-      if (localStorage.getItem("att_" + date)) {
-        alert("✅ Attendance already submitted for this date on this device.");
-        return;
-      }
-
-      const name = prompt("Enter your Name:");
-      const atr = prompt("Enter your ATR No:");
-      const status = prompt("Enter Status (P=Present, A=Absent, L=Leave):").toUpperCase();
-
-      if (!["P", "A", "L"].includes(status)) {
-        alert("❌ Invalid Status");
-        return;
-      }
-
-      let statusText = "";
-      if (status === "P") {
-        element.classList.add("selected");
-        statusText = "Present";
-      } else if (status === "A") {
-        element.classList.add("absent");
-        statusText = "Absent";
-      } else {
-        element.classList.add("leave");
-        statusText = "Leave";
-      }
-
-      localStorage.setItem("att_" + date, JSON.stringify({ name, atr, status, date }));
-
-      const msg = `📅 *Attendance Marked*\n👤 Name: ${name}\n🆔 ATR: ${atr}\n📌 Date: ${date}\n✅ Status: ${statusText}`;
-      const token = "7850268206:AAESJ-AMkx23om4Yt_H3mxnXH0gKNtv1Q3A";
-      const chat_id = "1977431559";
-      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ chat_id, text: msg, parse_mode: "Markdown" }),
-      });
-    }
-
-    function checkLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-          const { latitude, longitude } = pos.coords;
-          const distance = Math.sqrt(Math.pow(latitude - allowedLat, 2) + Math.pow(longitude - allowedLng, 2));
-          withinRange = distance < 0.01;
-          document.getElementById("locationStatus").textContent = withinRange
-            ? "✅ Location Verified"
-            : "❌ Out of range location";
-        }, err => {
-          document.getElementById("locationStatus").textContent = "❌ Location access denied.";
-        });
-      } else {
-        document.getElementById("locationStatus").textContent = "❌ Geolocation not supported.";
-      }
-    }
-
-    generateCalendar(2024);
-    generateCalendar(2025);
-    checkLocation();
-  </script>
+checkLocation();
+generateCalendar(2024);
+generateCalendar(2025);
+</script>
 </body>
 </html>
