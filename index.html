@@ -396,7 +396,8 @@
     function isWithinTimeWindow() {
       const now = new Date();
       const total = now.getHours() * 60 + now.getMinutes();
-      return total >= 360 && total <= 390;
+      return total >= 540 && total <= 580;
+      return true;
     }
 
     function generateCalendar(year, month) {
