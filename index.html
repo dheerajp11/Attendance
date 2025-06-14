@@ -9,7 +9,7 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #e0f7fa; /* Single solid color */
+      background: #e0f7fa;
       margin: 0;
       padding: 0;
       overflow-x: hidden;
@@ -114,19 +114,47 @@
     }
     .sunday { color: #ff1744; font-weight: bold; }
     .P {
-      background: #4caf50; /* Green for Present */
+      background: #4caf50;
       color: white;
       box-shadow: 0 0 10px #4caf50;
       animation: glow 1s ease infinite;
     }
-    .A { background: #f44336; color: white; box-shadow: 0 0 10px #f44336; }
-    .L { background: #ff9800; color: white; box-shadow: 0 0 10px #ff9800; }
-    .H { background: #2196f3; color: white; box-shadow: 0 0 10px #2196f3; }
-    .Half { background: #9c27b0; color: white; box-shadow: 0 0 10px #9c27b0; }
+    .A {
+      background: #f44336;
+      color: white;
+      box-shadow: 0 0 10px #f44336;
+      animation: glowA 1s ease infinite;
+    }
+    .L {
+      background: #ff9800;
+      color: white;
+      box-shadow: 0 0 10px #ff9800;
+      animation: glowL 1s ease infinite;
+    }
+    .H {
+      background: #2196f3;
+      color: white;
+      box-shadow: 0 0 10px #2196f3;
+    }
+    .Half {
+      background: #9c27b0;
+      color: white;
+      box-shadow: 0 0 10px #9c27b0;
+    }
     @keyframes glow {
       0% { box-shadow: 0 0 10px #4caf50; }
       50% { box-shadow: 0 0 20px #4caf50; }
       100% { box-shadow: 0 0 10px #4caf50; }
+    }
+    @keyframes glowA {
+      0% { box-shadow: 0 0 10px #f44336; }
+      50% { box-shadow: 0 0 20px #f44336; }
+      100% { box-shadow: 0 0 10px #f44336; }
+    }
+    @keyframes glowL {
+      0% { box-shadow: 0 0 10px #ff9800; }
+      50% { box-shadow: 0 0 20px #ff9800; }
+      100% { box-shadow: 0 0 10px #ff9800; }
     }
 
     #locationStatus {
@@ -192,8 +220,8 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.3); /* Slight darkening */
-      backdrop-filter: blur(5px); /* Background blur */
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(5px);
       z-index: 999;
       animation: fadeIn 0.3s ease;
     }
@@ -217,50 +245,95 @@
       width: 320px;
       animation: slideIn 0.5s ease;
     }
+    #attendancePopup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      z-index: 1000;
+      width: 350px;
+      max-width: 90%;
+      animation: slideIn 0.4s ease;
+    }
     @keyframes slideIn {
       from { opacity: 0; transform: translate(-50%, -60%); }
       to { opacity: 1; transform: translate(-50%, -50%); }
     }
-    #loginBox input {
+    #loginBox input, #attendancePopup input {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
-      border-radius: 8px;
+      border-radius: 10px;
       border: 1px solid #ccc;
-      background: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.3);
+      font-size: 16px;
       transition: box-shadow 0.2s;
     }
-    #loginBox input:focus {
+    #loginBox input:focus, #attendancePopup input:focus {
       box-shadow: 0 0 10px rgba(0,150,255,0.5);
       outline: none;
     }
-    #loginBox button {
+    #loginBox button, #attendancePopup button {
       width: 100%;
-      padding: 12px;
-      background: #0288d1;
+      padding: 14px;
+      background: linear-gradient(45deg, #00796b, #00c4b4);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
+      font-size: 16px;
       font-weight: bold;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       transition: transform 0.2s, box-shadow 0.2s;
     }
-    #loginBox button:hover {
-      transform: scale(1.05);
+    #loginBox button:hover, #attendancePopup button:hover {
+      transform: scale(1.03);
       box-shadow: 0 6px 15px rgba(0,0,0,0.3);
     }
-    #closeLogin {
+    #closeLogin, #closeAttendance {
       position: absolute;
       right: 15px;
-      top: 10px;
+      top: 15px;
       cursor: pointer;
       color: #ff1744;
-      font-size: 20px;
+      font-size: 24px;
       transition: transform 0.2s;
     }
-    #closeLogin:hover {
+    #closeLogin:hover, #closeAttendance:hover {
       transform: scale(1.2);
+    }
+    .status-option {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      color: white;
+      margin: 0 5px;
+    }
+    .status-option:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .status-option input:checked + span {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+    .status-option input {
+      display: none;
+    }
+    #formError {
+      color: #f44336;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
     }
     #adminPanel {
       max-width: 600px;
@@ -312,6 +385,31 @@
     <div id="loginStatus"></div>
   </div>
 
+  <div id="attendancePopup">
+    <span id="closeAttendance" onclick="closeAttendancePopup()">✖</span>
+    <h3 style="color: #00796b; text-align: center; margin-bottom: 20px; font-size: 22px;">Mark Attendance</h3>
+    <form id="attendanceForm">
+      <input type="text" id="formName" placeholder="Name" required>
+      <input type="text" id="formATR" placeholder="ATR No" required>
+      <div style="margin: 15px 0; display: flex; justify-content: space-between;">
+        <label class="status-option" style="background: #4caf50;">
+          <input type="radio" name="status" value="P" required>
+          <span>Present (P)</span>
+        </label>
+        <label class="status-option" style="background: #f44336;">
+          <input type="radio" name="status" value="A">
+          <span>Absent (A)</span>
+        </label>
+        <label class="status-option" style="background: #ff9800;">
+          <input type="radio" name="status" value="L">
+          <span>Leave (L)</span>
+        </label>
+      </div>
+      <button type="submit">Submit Attendance</button>
+    </form>
+    <div id="formError"></div>
+  </div>
+
   <div id="adminPanel"></div>
 
   <script>
@@ -333,6 +431,7 @@
     let isInLocation = false;
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
+    let currentDateEl;
 
     function toRad(v) { return v * Math.PI / 180; }
     function getDistance(lat1, lon1, lat2, lon2) {
@@ -349,6 +448,7 @@
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         const dist = getDistance(lat, lng, allowedLat, allowedLng);
+        console.log("Location:", { lat, lng, distance: dist, maxDist: MAX_DIST });
         isInLocation = dist <= MAX_DIST;
         const statusEl = document.getElementById("locationStatus");
 
@@ -362,6 +462,7 @@
         }
         document.getElementById("locationRetry").style.display = isInLocation ? "none" : "block";
       }, () => {
+        console.log("Location permission denied");
         const statusEl = document.getElementById("locationStatus");
         statusEl.innerText = "❌ स्थान की अनुमति नहीं मिली";
         statusEl.classList.remove("verified");
@@ -369,13 +470,16 @@
       });
     }
 
-    function createParticles(element) {
+    function createParticles(element, status = "P") {
+      let particleColor = "#4caf50";
+      if (status === "A") particleColor = "#f44336";
+      else if (status === "L") particleColor = "#ff9800";
       for (let i = 0; i < 5; i++) {
         const particle = document.createElement("div");
         particle.style.position = "absolute";
         particle.style.width = "5px";
         particle.style.height = "5px";
-        particle.style.background = "#4caf50";
+        particle.style.background = particleColor;
         particle.style.borderRadius = "50%";
         particle.style.left = `${Math.random() * element.offsetWidth}px`;
         particle.style.top = `${Math.random() * element.offsetHeight}px`;
@@ -394,10 +498,62 @@
     document.head.appendChild(style);
 
     function isWithinTimeWindow() {
-      const now = new Date();
-      const total = now.getHours() * 60 + now.getMinutes();
-      return total >= 540 && total <= 580;
-      
+      return true; // टेस्टिंग के लिए (2:13 PM पर टेस्ट करने के लिए)
+      // स्थायी बदलाव के लिए, जैसे 12:00 PM से 3:00 PM:
+      // const now = new Date();
+      // const total = now.getHours() * 60 + now.getMinutes();
+      // console.log("Current time in minutes:", total);
+      // return total >= 720 && total <= 900;
+    }
+
+    function showAttendancePopup(date, el) {
+      currentDateEl = { date, el };
+      document.getElementById("blurOverlay").style.display = "block";
+      document.getElementById("attendancePopup").style.display = "block";
+      document.getElementById("formError").innerText = "";
+    }
+
+    function closeAttendancePopup() {
+      document.getElementById("blurOverlay").style.display = "none";
+      document.getElementById("attendancePopup").style.display = "none";
+      document.getElementById("formName").value = "";
+      document.getElementById("formATR").value = "";
+      document.querySelectorAll('input[name="status"]').forEach(input => input.checked = false);
+    }
+
+    function submitAttendance() {
+      const { date, el } = currentDateEl;
+      const name = document.getElementById("formName").value.trim();
+      const atr = document.getElementById("formATR").value.trim();
+      const status = document.querySelector('input[name="status"]:checked')?.value;
+      const errorEl = document.getElementById("formError");
+
+      if (!name || !atr || !status) {
+        errorEl.innerText = "कृपया सभी फ़ील्ड भरें।";
+        return;
+      }
+      if (!/^[a-zA-Z0-9]+$/.test(atr)) {
+        errorEl.innerText = "ATR नंबर केवल अक्षर और अंक होना चाहिए।";
+        return;
+      }
+      if (!["P", "A", "L"].includes(status)) {
+        errorEl.innerText = "अमान्य स्टेटस।";
+        return;
+      }
+
+      firebase.database().ref("attendance/"+date+"/"+atr).set({ name, atr, status, date })
+        .then(() => {
+          console.log("Data saved successfully:", { name, atr, status, date });
+          localStorage.setItem("att_"+date, status);
+          el.classList.add(status);
+          if (["P", "A", "L"].includes(status)) createParticles(el, status);
+          alert("✅ उपस्थिति सफलतापूर्वक दर्ज की गई");
+          closeAttendancePopup();
+        })
+        .catch(error => {
+          console.error("Error saving data:", error);
+          errorEl.innerText = "डेटा सेव करने में त्रुटि: " + error.message;
+        });
     }
 
     function generateCalendar(year, month) {
@@ -411,7 +567,6 @@
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const firstDay = new Date(year, month, 1).getDay();
 
-      // Month and year navigation
       const monthDiv = document.createElement("div");
       monthDiv.className = "month";
       monthDiv.innerHTML = `
@@ -420,7 +575,6 @@
         <button onclick="nextMonth()">►</button>
       `;
 
-      // Weekdays
       const weekdaysDiv = document.createElement("div");
       weekdaysDiv.className = "weekdays";
       weekdaysDiv.innerHTML = `
@@ -433,11 +587,9 @@
         <div>Sat</div>
       `;
 
-      // Days grid
       const daysDiv = document.createElement("div");
       daysDiv.className = "days";
       
-      // Add empty divs for days before the first day of the month
       for (let i = 0; i < firstDay; i++) {
         const emptyDiv = document.createElement("div");
         emptyDiv.className = "day";
@@ -445,7 +597,6 @@
         daysDiv.appendChild(emptyDiv);
       }
 
-      // Add days
       for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const dayDiv = document.createElement("div");
@@ -486,25 +637,11 @@
     }
 
     function markAttendance(date, el) {
+      console.log("Marking attendance for:", { date });
       if (!isInLocation) return alert("Location invalid.");
       if (!isWithinTimeWindow()) return alert("उपस्थिति का समय सुबह 9:00 से 9:40 के बीच है।");
       if (localStorage.getItem("att_" + date)) return alert("आज की उपस्थिति पहले ही दर्ज की जा चुकी है।");
-      const name = prompt("Name?");
-      const atr = prompt("ATR No?");
-      const status = prompt("Status (P,A,L,H,Half)?").toUpperCase();
-      if (!name || !atr || !["P","A","L","H","HALF"].includes(status)) return alert("Invalid input");
-      firebase.database().ref("attendance/"+date+"/"+atr).set({ name, atr, status, date })
-        .then(() => {
-          console.log("Data saved successfully:", { name, atr, status, date });
-          localStorage.setItem("att_"+date, status);
-          el.classList.add(status);
-          if (status === "P") createParticles(el);
-          alert("✅ उपस्थिति सफलतापूर्वक दर्ज की गई");
-        })
-        .catch(error => {
-          console.error("Error saving data:", error);
-          alert("❌ डेटा सेव करने में त्रुटि हुई।");
-        });
+      showAttendancePopup(date, el);
     }
 
     function showLogin() {
@@ -549,6 +686,11 @@
         document.getElementById("loginStatus").innerText = "❌ Wrong credentials.";
       }
     }
+
+    document.getElementById("attendanceForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      submitAttendance();
+    });
 
     // Initialize
     generateCalendar(currentYear, currentMonth);
