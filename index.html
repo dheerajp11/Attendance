@@ -308,26 +308,34 @@
     #closeLogin:hover, #closeAttendance:hover {
       transform: scale(1.2);
     }
-    .status-option {
+    .status-button {
       flex: 1;
       text-align: center;
-      padding: 10px;
-      border-radius: 10px;
+      padding: 12px;
+      border-radius: 12px;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
       color: white;
       margin: 0 5px;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      position: relative;
+      font-weight: bold;
     }
-    .status-option:hover {
+    .status-button:hover {
       transform: scale(1.05);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    .status-option input:checked + span {
+    .status-button.selected {
       transform: scale(1.1);
-      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      animation: glowButton 1s ease infinite;
     }
-    .status-option input {
-      display: none;
+    .status-button.p { background: #4caf50; }
+    .status-button.a { background: #f44336; }
+    .status-button.l { background: #ff9800; }
+    @keyframes glowButton {
+      0% { box-shadow: 0 0 10px currentColor; }
+      50% { box-shadow: 0 0 20px currentColor; }
+      100% { box-shadow: 0 0 10px currentColor; }
     }
     #formError {
       color: #f44336;
@@ -392,19 +400,11 @@
       <input type="text" id="formName" placeholder="Name" required>
       <input type="text" id="formATR" placeholder="ATR No" required>
       <div style="margin: 15px 0; display: flex; justify-content: space-between;">
-        <label class="status-option" style="background: #4caf50;">
-          <input type="radio" name="status" value="P" required>
-          <span>Present (P)</span>
-        </label>
-        <label class="status-option" style="background: #f44336;">
-          <input type="radio" name="status" value="A">
-          <span>Absent (A)</span>
-        </label>
-        <label class="status-option" style="background: #ff9800;">
-          <input type="radio" name="status" value="L">
-          <span>Leave (L)</span>
-        </label>
+        <div class="status-button p" onclick="selectStatus('P')">Present (P)</div>
+        <div class="status-button a" onclick="selectStatus('A')">Absent (A)</div>
+        <div class="status-button l" onclick="selectStatus('L')">Leave (L)</div>
       </div>
+      <input type="hidden" id="formStatus" name="status">
       <button type="submit">Submit Attendance</button>
     </form>
     <div id="formError"></div>
@@ -498,12 +498,21 @@
     document.head.appendChild(style);
 
     function isWithinTimeWindow() {
-       // टेस्टिंग के लिए (2:13 PM पर टेस्ट करने के लिए)
-      // स्थायी बदलाव के लिए, जैसे 12:00 PM से 3:00 PM:
-       const now = new Date();
-       const total = now.getHours() * 60 + now.getMinutes();
-       console.log("Current time in minutes:", total);
-       return total >= 540 && total <= 580;
+      console.log("Time check bypassed for testing");
+      return true; // टेस्टिंग के लिए (15 जून 2025, 6:16 PM पर)
+      // डिफ़ॉल्ट टाइम लिमिट: सुबह 9:00 AM से 9:40 AM
+      // const now = new Date();
+      // const total = now.getHours() * 60 + now.getMinutes();
+      // console.log("Current time in minutes:", total);
+      // return total >= 540 && total <= 580;
+      // वैकल्पिक: दोपहर 12:00 PM से 3:00 PM
+      // return total >= 720 && total <= 900;
+    }
+
+    function selectStatus(status) {
+      document.querySelectorAll('.status-button').forEach(btn => btn.classList.remove('selected'));
+      document.querySelector(`.status-button.${status.toLowerCase()}`).classList.add('selected');
+      document.getElementById('formStatus').value = status;
     }
 
     function showAttendancePopup(date, el) {
@@ -511,6 +520,8 @@
       document.getElementById("blurOverlay").style.display = "block";
       document.getElementById("attendancePopup").style.display = "block";
       document.getElementById("formError").innerText = "";
+      document.getElementById("formStatus").value = "";
+      document.querySelectorAll('.status-button').forEach(btn => btn.classList.remove('selected'));
     }
 
     function closeAttendancePopup() {
@@ -518,15 +529,17 @@
       document.getElementById("attendancePopup").style.display = "none";
       document.getElementById("formName").value = "";
       document.getElementById("formATR").value = "";
-      document.querySelectorAll('input[name="status"]').forEach(input => input.checked = false);
+      document.getElementById("formStatus").value = "";
+      document.querySelectorAll('.status-button').forEach(btn => btn.classList.remove('selected'));
     }
 
     function submitAttendance() {
       const { date, el } = currentDateEl;
       const name = document.getElementById("formName").value.trim();
       const atr = document.getElementById("formATR").value.trim();
-      const status = document.querySelector('input[name="status"]:checked')?.value;
+      const status = document.getElementById("formStatus").value;
       const errorEl = document.getElementById("formError");
+      const timestamp = new Date().toISOString();
 
       if (!name || !atr || !status) {
         errorEl.innerText = "कृपया सभी फ़ील्ड भरें।";
@@ -540,10 +553,18 @@
         errorEl.innerText = "अमान्य स्टेटस।";
         return;
       }
+      if (status === "P" && !isInLocation) {
+        errorEl.innerText = "स्थान सत्यापित नहीं है।";
+        return;
+      }
+      if (status === "P" && !isWithinTimeWindow()) {
+        errorEl.innerText = "उपस्थिति का समय सुबह 9:00 से 9:40 के बीच है।";
+        return;
+      }
 
-      firebase.database().ref("attendance/"+date+"/"+atr).set({ name, atr, status, date })
+      firebase.database().ref("attendance/"+date+"/"+atr).set({ name, atr, status, date, timestamp })
         .then(() => {
-          console.log("Data saved successfully:", { name, atr, status, date });
+          console.log("Data saved successfully:", { name, atr, status, date, timestamp });
           localStorage.setItem("att_"+date, status);
           el.classList.add(status);
           if (["P", "A", "L"].includes(status)) createParticles(el, status);
@@ -638,8 +659,6 @@
 
     function markAttendance(date, el) {
       console.log("Marking attendance for:", { date });
-      if (!isInLocation) return alert("Location invalid.");
-      if (!isWithinTimeWindow()) return alert("उपस्थिति का समय सुबह 9:00 से 9:40 के बीच है।");
       if (localStorage.getItem("att_" + date)) return alert("आज की उपस्थिति पहले ही दर्ज की जा चुकी है।");
       showAttendancePopup(date, el);
     }
@@ -663,24 +682,25 @@
       if (u === "Dslboggie" && p === "226005") {
         closeLogin();
         const panel = document.getElementById("adminPanel");
-        panel.innerHTML = `<h3>📋 Attendance Records</h3><table><thead><tr><th>Date</th><th>Name</th><th>ATR</th><th>Status</th></tr></thead><tbody id='adminTable'></tbody></table>`;
+        panel.innerHTML = `<h3>📋 Attendance Records</h3><table><thead><tr><th>Date</th><th>Name</th><th>ATR</th><th>Status</th><th>Time</th></tr></thead><tbody id='adminTable'></tbody></table>`;
         const tbody = document.getElementById("adminTable");
         firebase.database().ref("attendance").once("value", snap => {
           console.log("Data fetched:", snap.val());
           if (!snap.exists()) {
-            tbody.innerHTML = "<tr><td colspan='4'>No records found.</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='5'>No records found.</td></tr>";
             return;
           }
           snap.forEach(dateSnap => {
             const date = dateSnap.key;
             dateSnap.forEach(childSnap => {
               const data = childSnap.val();
-              tbody.innerHTML += `<tr><td>${date}</td><td>${data.name}</td><td>${data.atr}</td><td>${data.status}</td></tr>`;
+              const time = data.timestamp ? new Date(data.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+              tbody.innerHTML += `<tr><td>${date}</td><td>${data.name}</td><td>${data.atr}</td><td>${data.status}</td><td>${time}</td></tr>`;
             });
           });
         }).catch(error => {
           console.error("Error fetching data:", error);
-          tbody.innerHTML = "<tr><td colspan='4'>Error fetching records.</td></tr>";
+          tbody.innerHTML = "<tr><td colspan='5'>Error fetching records.</td></tr>";
         });
       } else {
         document.getElementById("loginStatus").innerText = "❌ Wrong credentials.";
